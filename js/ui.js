@@ -9,8 +9,8 @@ class UIManager {
 
     initializeEventListeners() {
         // File upload handlers
-        document.getElementById('file1').addEventListener('change', (e) => this.handleFileUpload(e, 1));
-        document.getElementById('file2').addEventListener('change', (e) => this.handleFileUpload(e, 2));
+        document.getElementById('fileInput1').addEventListener('change', (e) => this.handleFileUpload(e, 1));
+        document.getElementById('fileInput2').addEventListener('change', (e) => this.handleFileUpload(e, 2));
         
         // Button handlers
         document.getElementById('compareBtn').addEventListener('click', () => this.compareDocuments());
@@ -19,13 +19,13 @@ class UIManager {
         document.getElementById('newComparisonBtn').addEventListener('click', () => this.newComparison());
         
         // Tab handlers
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        document.querySelectorAll('.nav-item').forEach(btn => {
             btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
         });
         
         // Chat handlers
-        document.getElementById('sendChatBtn').addEventListener('click', () => this.sendChatMessage());
-        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+        document.getElementById('sendMessageBtn').addEventListener('click', () => this.sendChatMessage());
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendChatMessage();
         });
     }
@@ -458,18 +458,18 @@ class UIManager {
 
     newComparison() {
         // Reset file inputs
-        document.getElementById('file1').value = '';
-        document.getElementById('file2').value = '';
+        document.getElementById('fileInput1').value = '';
+        document.getElementById('fileInput2').value = '';
         
         // Reset status displays
-        document.getElementById('status1').textContent = 'Ningún archivo seleccionado';
-        document.getElementById('status1').className = 'file-status';
-        document.getElementById('status2').textContent = 'Ningún archivo seleccionado';
-        document.getElementById('status2').className = 'file-status';
+        document.getElementById('processing1').classList.add('hidden');
+        document.getElementById('processing2').classList.add('hidden');
+        document.getElementById('fileInfo1').classList.add('hidden');
+        document.getElementById('fileInfo2').classList.add('hidden');
         
         // Hide previews
-        document.getElementById('preview1').classList.add('hidden');
-        document.getElementById('preview2').classList.add('hidden');
+        document.querySelector('#dropZone1 .drop-content').style.display = 'block';
+        document.querySelector('#dropZone2 .drop-content').style.display = 'block';
         
         // Hide results
         document.getElementById('resultsSection').classList.add('hidden');
@@ -554,7 +554,7 @@ class UIManager {
     }
 
     sendChatMessage() {
-        const chatInput = document.getElementById('chatInput');
+        const chatInput = document.getElementById('messageInput');
         const messageText = chatInput.value.trim();
         
         if (!messageText) return;
