@@ -8,9 +8,9 @@ class UIManager {
     }
 
     initializeEventListeners() {
-        // File upload handlers
-        document.getElementById('fileInput1').addEventListener('change', (e) => this.handleFileUpload(e, 1));
-        document.getElementById('fileInput2').addEventListener('change', (e) => this.handleFileUpload(e, 2));
+        // Drop zone and file input handlers
+        this.setupDropZone('dropZone1', 'fileInput1', 1);
+        this.setupDropZone('dropZone2', 'fileInput2', 2);
         
         // Button handlers
         document.getElementById('compareBtn').addEventListener('click', () => this.compareDocuments());
@@ -28,20 +28,81 @@ class UIManager {
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.sendChatMessage();
         });
+        
+        // Enable message input
+        document.getElementById('messageInput').addEventListener('input', (e) => {
+            const sendBtn = document.getElementById('sendMessageBtn');
+            sendBtn.disabled = e.target.value.trim().length === 0;
+        });
+    }
+
+    setupDropZone(dropZoneId, fileInputId, fileNumber) {
+        const dropZone = document.getElementById(dropZoneId);
+        const fileInput = document.getElementById(fileInputId);
+        
+        if (!dropZone || !fileInput) {
+            console.error(`No se encontró elemento: ${dropZoneId} o ${fileInputId}`);
+            return;
+        }
+
+        // Click en drop zone abre selector de archivos
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Cambio en input de archivo
+        fileInput.addEventListener('change', (e) => {
+            this.handleFileUpload(e, fileNumber);
+        });
+
+        // Drag and drop functionality
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                fileInput.files = files;
+                this.handleFileUpload({ target: { files: files } }, fileNumber);
+            } else {
+                window.notifications.showToast('Por favor selecciona un archivo PDF válido', 'error');
+            }
+        });
     }
 
     async handleFileUpload(event, fileNumber) {
         const file = event.target.files[0];
         if (!file) return;
 
-        const statusElement = document.getElementById(`status${fileNumber}`);
-        const previewElement = document.getElementById(`preview${fileNumber}`);
+        if (file.type !== 'application/pdf') {
+            window.notifications.showToast('Por favor selecciona un archivo PDF válido', 'error');
+            return;
+        }
+
+        const dropZone = document.getElementById(`dropZone${fileNumber}`);
+        const fileInfo = document.getElementById(`fileInfo${fileNumber}`);
+        const processing = document.getElementById(`processing${fileNumber}`);
+        const dropContent = dropZone.querySelector('.drop-content');
         
         try {
-            statusElement.textContent = 'Procesando...';
-            statusElement.className = 'file-status processing';
+            // Mostrar estado de procesamiento
+            dropContent.style.display = 'none';
+            fileInfo.classList.add('hidden');
+            processing.classList.remove('hidden');
             
-            const extractedData = await window.pdfProcessor.extractFormData(file);
+            window.notifications.showToast(`Procesando ${file.name}...`, 'info');
+            
+            const extractedData = await window.pdfProcessor.extractPDFFields(file);
             
             if (fileNumber === 1) {
                 this.currentData1 = extractedData;
@@ -49,19 +110,27 @@ class UIManager {
                 this.currentData2 = extractedData;
             }
             
-            statusElement.textContent = `✓ ${Object.keys(extractedData.fields).length} campos detectados`;
-            statusElement.className = 'file-status success';
+            // Mostrar información del archivo
+            processing.classList.add('hidden');
+            fileInfo.classList.remove('hidden');
+            fileInfo.querySelector('.file-name').textContent = file.name;
+            fileInfo.querySelector('.file-size').textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
             
-            // Show preview
-            this.showFilePreview(previewElement, extractedData);
+            window.notifications.showToast(
+                `✓ ${file.name} procesado: ${Object.keys(extractedData.fields).length} campos detectados`, 
+                'success'
+            );
             
             // Enable compare button if both files are loaded
             this.updateCompareButton();
             
         } catch (error) {
             console.error('Error processing file:', error);
-            statusElement.textContent = '✗ Error al procesar archivo';
-            statusElement.className = 'file-status error';
+            
+            // Restaurar estado inicial
+            processing.classList.add('hidden');
+            dropContent.style.display = 'block';
+            
             window.notifications.showToast(`Error procesando ${file.name}: ${error.message}`, 'error');
         }
     }
@@ -92,7 +161,12 @@ class UIManager {
         const canCompare = this.currentData1 && this.currentData2;
         
         compareBtn.disabled = !canCompare;
-        compareBtn.textContent = canCompare ? '🔍 Comparar Documentos' : 'Selecciona ambos archivos';
+        
+        if (canCompare) {
+            compareBtn.innerHTML = '<span class="btn-icon">⚡</span><span class="btn-text">Comparar Documentos</span>';
+        } else {
+            compareBtn.innerHTML = '<span class="btn-icon">⚡</span><span class="btn-text">Selecciona ambos archivos</span>';
+        }
     }
 
     async compareDocuments() {
@@ -104,11 +178,11 @@ class UIManager {
         try {
             const compareBtn = document.getElementById('compareBtn');
             compareBtn.disabled = true;
-            compareBtn.textContent = '⏳ Comparando...';
+            compareBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Comparando...</span>';
             
             window.notifications.showToast('Iniciando comparación...', 'info');
             
-            const comparisonResult = await window.pdfProcessor.compareDocuments(
+            const comparisonResult = window.pdfProcessor.comparePDFFields(
                 this.currentData1, 
                 this.currentData2
             );
@@ -116,17 +190,13 @@ class UIManager {
             this.currentComparisonResult = comparisonResult;
             this.displayComparisonResults(comparisonResult);
             
-            // Enable action buttons
-            document.getElementById('downloadReportBtn').disabled = false;
-            document.getElementById('saveResultBtn').disabled = false;
-            
         } catch (error) {
             console.error('Error comparing documents:', error);
             window.notifications.showToast(`Error en la comparación: ${error.message}`, 'error');
         } finally {
             const compareBtn = document.getElementById('compareBtn');
-            compareBtn.disabled = false;
-            compareBtn.textContent = '🔍 Comparar Documentos';
+            compareBtn.disabled = this.currentData1 && this.currentData2 ? false : true;
+            compareBtn.innerHTML = '<span class="btn-icon">⚡</span><span class="btn-text">Comparar Documentos</span>';
         }
     }
 
@@ -147,16 +217,16 @@ class UIManager {
         // Determinar el resultado y mostrar notificaciones apropiadas
         if (summary.matchPercentage === 100) {
             resultIcon.textContent = '✅';
-            resultTitle.textContent = '🎉 Coincidencia Perfecta - 100%';
-            resultDescription.textContent = 'Los documentos son completamente idénticos. Todos los campos coinciden exactamente.';
+            resultTitle.textContent = '🎉 COINCIDENCIA 100%';
+            resultDescription.textContent = 'Los documentos coinciden perfectamente. Todos los campos son idénticos.';
             resultIcon.style.color = '#10b981';
             
             // Mostrar notificación de coincidencia perfecta
             window.notifications.showPerfectMatch(comparisonResult.file1, comparisonResult.file2);
         } else {
             resultIcon.textContent = '⚠️';
-            resultTitle.textContent = `⚠️ Diferencias Detectadas - ${summary.matchPercentage}%`;
-            resultDescription.textContent = `Se encontraron ${summary.differences} diferencias entre los documentos. Coincidencia: ${summary.matchPercentage}%`;
+            resultTitle.textContent = `❌ NO COINCIDEN - ${summary.matchPercentage}%`;
+            resultDescription.textContent = `Se encontraron ${summary.differences} diferencias. Los documentos NO son idénticos.`;
             resultIcon.style.color = '#ef4444';
             
             // Mostrar notificación de diferencias y enviar alertas
@@ -461,13 +531,13 @@ class UIManager {
         document.getElementById('fileInput1').value = '';
         document.getElementById('fileInput2').value = '';
         
-        // Reset status displays
+        // Reset displays
         document.getElementById('processing1').classList.add('hidden');
         document.getElementById('processing2').classList.add('hidden');
         document.getElementById('fileInfo1').classList.add('hidden');
         document.getElementById('fileInfo2').classList.add('hidden');
         
-        // Hide previews
+        // Show drop content again
         document.querySelector('#dropZone1 .drop-content').style.display = 'block';
         document.querySelector('#dropZone2 .drop-content').style.display = 'block';
         
@@ -476,9 +546,7 @@ class UIManager {
         
         // Reset buttons
         document.getElementById('compareBtn').disabled = true;
-        document.getElementById('compareBtn').textContent = 'Selecciona ambos archivos';
-        document.getElementById('downloadReportBtn').disabled = true;
-        document.getElementById('saveResultBtn').disabled = true;
+        document.getElementById('compareBtn').innerHTML = '<span class="btn-icon">⚡</span><span class="btn-text">Selecciona ambos archivos</span>';
         
         // Clear data
         this.currentData1 = null;
