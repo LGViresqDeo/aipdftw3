@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRAZABILITY AI - Sistema de Comparación PDF</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">TRAZABILITY AI</h1>
+                <div class="header-controls">
+                    <div id="connectionStatus" class="connection-status online">
+                        <span class="status-dot"></span>
+                        <span class="status-text">En línea</span>
+                    </div>
+                    <div id="alertBadge" class="alert-badge hidden">
+                        <span class="alert-icon">🚨</span>
+                        <span id="alertCount" class="alert-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="sidebar">
+            <div class="nav-items">
+                <button class="nav-item active" data-tab="comparison">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-text">Comparación PDF</span>
+                </button>
+                <button class="nav-item" data-tab="users">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">Usuarios</span>
+                </button>
+                <button class="nav-item" data-tab="chat">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">Chat Interno</span>
+                </button>
+                <button class="nav-item" data-tab="reports">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">Reportes</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- PDF Comparison Tab -->
+            <div id="comparisonTab" class="tab-content active">
+                <div class="comparison-container">
+                    <div class="comparison-header">
+                        <h2>🧠 Comparación Inteligente de Formularios PDF</h2>
+                        <p>Sube dos archivos PDF para analizar y comparar sus campos automáticamente</p>
+                    </div>
+
+                    <div class="upload-section">
+                        <div class="upload-card">
+                            <h3>Archivo PDF Principal</h3>
+                            <div id="dropZone1" class="drop-zone">
+                                <div class="drop-content">
+                                    <div class="upload-icon">📤</div>
+                                    <p class="upload-text">Arrastra tu PDF aquí o haz clic para seleccionar</p>
+                                    <input type="file" id="fileInput1" accept=".pdf" hidden>
+                                </div>
+                                <div id="fileInfo1" class="file-info hidden">
+                                    <div class="file-icon">✅</div>
+                                    <p class="file-name"></p>
+                                    <p class="file-size"></p>
+                                </div>
+                                <div id="processing1" class="processing hidden">
+                                    <div class="spinner"></div>
+                                    <p>Procesando archivo...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="upload-card">
+                            <h3>Archivo PDF de Comparación</h3>
+                            <div id="dropZone2" class="drop-zone">
+                                <div class="drop-content">
+                                    <div class="upload-icon">📤</div>
+                                    <p class="upload-text">Arrastra tu PDF aquí o haz clic para seleccionar</p>
+                                    <input type="file" id="fileInput2" accept=".pdf" hidden>
+                                </div>
+                                <div id="fileInfo2" class="file-info hidden">
+                                    <div class="file-icon">✅</div>
+                                    <p class="file-name"></p>
+                                    <p class="file-size"></p>
+                                </div>
+                                <div id="processing2" class="processing hidden">
+                                    <div class="spinner"></div>
+                                    <p>Procesando archivo...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="compare-section">
+                        <button id="compareBtn" class="compare-btn" disabled>
+                            <span class="btn-icon">⚡</span>
+                            <span class="btn-text">Comparar Documentos</span>
+                        </button>
+                        <div id="processingStatus" class="processing-status hidden"></div>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="resultsSection" class="results-section hidden">
+                        <div class="results-header">
+                            <div id="resultIcon" class="result-icon"></div>
+                            <h3 id="resultTitle" class="result-title"></h3>
+                            <p id="resultDescription" class="result-description"></p>
+                        </div>
+
+                        <div class="results-content">
+                            <div class="file-comparison">
+                                <div class="file-fields">
+                                    <h4 id="fileName1">Archivo 1</h4>
+                                    <div id="fields1" class="fields-container"></div>
+                                </div>
+                                <div class="file-fields">
+                                    <h4 id="fileName2">Archivo 2</h4>
+                                    <div id="fields2" class="fields-container"></div>
+                                </div>
+                            </div>
+
+                            <div id="differencesSection" class="differences-section hidden">
+                                <h4>📋 Resumen de Diferencias</h4>
+                                <div id="differencesList" class="differences-list"></div>
+                            </div>
+                        </div>
+
+                        <div class="results-actions">
+                            <button id="downloadReportBtn" class="action-btn secondary">
+                                <span class="btn-icon">📥</span>
+                                <span class="btn-text">Descargar Reporte</span>
+                            </button>
+                            <button id="saveResultBtn" class="action-btn primary">
+                                <span class="btn-icon">💾</span>
+                                <span class="btn-text">Guardar Resultado</span>
+                            </button>
+                            <button id="newComparisonBtn" class="action-btn">
+                                <span class="btn-icon">🔄</span>
+                                <span class="btn-text">Nueva Comparación</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="usersTab" class="tab-content">
+                <div class="users-container">
+                    <div class="users-header">
+                        <h2>👥 Gestión de Usuarios</h2>
+                        <button id="addUserBtn" class="add-user-btn">
+                            <span class="btn-icon">➕</span>
+                            <span class="btn-text">Nuevo Usuario</span>
+                        </button>
+                    </div>
+
+                    <div id="userForm" class="user-form hidden">
+                        <h3 id="formTitle">Crear Nuevo Usuario</h3>
+                        <form id="userFormElement">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="userName">Nombre</label>
+                                    <input type="text" id="userName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="userWhatsapp">WhatsApp</label>
+                                    <input type="text" id="userWhatsapp" placeholder="+54 9 11 12345678" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="userEmail">Email</label>
+                                    <input type="email" id="userEmail" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="userCategory">Categoría</label>
+                                    <select id="userCategory" required>
+                                        <option value="">Seleccionar categoría</option>
+                                        <option value="Administrador">Administrador</option>
+                                        <option value="Supervisor">Supervisor</option>
+                                        <option value="Analista">Analista</option>
+                                        <option value="Usuario">Usuario</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="cancelUserBtn" class="btn-secondary">Cancelar</button>
+                                <button type="submit" class="btn-primary">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="users-table">
+                        <table id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>WhatsApp</th>
+                                    <th>Email</th>
+                                    <th>Categoría</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                            </tbody>
+                        </table>
+                        <div id="noUsersMessage" class="no-data-message">
+                            <div class="no-data-icon">👤</div>
+                            <p>No hay usuarios registrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Tab -->
+            <div id="chatTab" class="tab-content">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h2>💬 Chat Interno</h2>
+                        <div class="chat-info">
+                            <span id="userCount">0 usuarios</span>
+                        </div>
+                    </div>
+
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="no-messages">
+                            <div class="no-messages-icon">💬</div>
+                            <p>No hay mensajes. Inicia una conversación.</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input">
+                        <input type="text" id="messageInput" placeholder="Escribe un mensaje..." maxlength="500">
+                        <button id="sendMessageBtn" disabled>
+                            <span class="btn-icon">📤</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reportsTab" class="tab-content">
+                <div class="reports-container">
+                    <h2>📊 Reportes y Estadísticas</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📄</div>
+                            <div class="stat-info">
+                                <h3 id="totalComparisons">0</h3>
+                                <p>Comparaciones Realizadas</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <h3 id="successfulMatches">0</h3>
+                                <p>Documentos Coincidentes</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <h3 id="foundDifferences">0</h3>
+                                <p>Diferencias Encontradas</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <h3 id="activeUsers">0</h3>
+                                <p>Usuarios Activos</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <h3>📋 Actividad Reciente</h3>
+                        <div id="recentActivity" class="activity-list">
+                            <div class="no-activity">
+                                <p>No hay actividad reciente</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/pdfProcessor.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

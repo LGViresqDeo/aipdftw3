@@ -1,0 +1,59 @@
+INSTRUCCIONES DE DEPLOYMENT - TRAZABILITY AI
+=====================================================
+
+ARCHIVOS NECESARIOS PARA DEPLOYMENT:
+------------------------------------
+✅ index.html (archivo principal)
+✅ styles.css (estilos)
+✅ js/app.js (aplicación principal)
+✅ js/database.js (base de datos local)
+✅ js/pdfProcessor.js (procesador de PDFs)
+✅ js/notifications.js (sistema de notificaciones)
+✅ js/ui.js (interfaz de usuario)
+✅ README.md (documentación)
+
+CÓMO DEPLOYAR:
+--------------
+1. HOSTING ESTÁTICO (Netlify, Vercel, GitHub Pages):
+   - Sube TODOS los archivos manteniendo la estructura de carpetas
+   - El archivo index.html debe estar en la raíz
+   - La carpeta js/ debe contener todos los archivos JavaScript
+
+2. SERVIDOR WEB (Apache, Nginx, IIS):
+   - Copia todos los archivos al directorio web
+   - Asegúrate de que el servidor puede servir archivos estáticos
+   - No necesita configuración especial
+
+3. INTEGRACIÓN EN PROYECTO EXISTENTE:
+   - Incluye los archivos JS en tu HTML:
+     <script src="js/database.js"></script>
+     <script src="js/pdfProcessor.js"></script>
+     <script src="js/notifications.js"></script>
+     <script src="js/ui.js"></script>
+     <script src="js/app.js"></script>
+   - Incluye el CSS: <link rel="stylesheet" href="styles.css">
+
+DEPENDENCIAS EXTERNAS (CDN):
+---------------------------
+- PDF.js: https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
+- jsPDF: https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js
+
+CONFIGURACIÓN:
+--------------
+- No requiere base de datos externa
+- Usa localStorage del navegador
+- Funciona 100% en el cliente
+- Compatible con todos los navegadores modernos
+
+TESTING LOCAL:
+--------------
+- Opción 1: Abrir index.html directamente en el navegador
+- Opción 2: npm run dev (usa http-server)
+- Opción 3: Cualquier servidor web local
+
+NOTAS IMPORTANTES:
+------------------
+- El sistema es completamente autónomo
+- No requiere backend ni base de datos
+- Todos los datos se almacenan localmente
+- Funciona offline después de la primera carga

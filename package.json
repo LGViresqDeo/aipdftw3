@@ -1,0 +1,25 @@
+{
+  "name": "trazability-ai-vanilla",
+  "version": "2.0.0",
+  "description": "Sistema de comparación de formularios PDF con JavaScript vanilla",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server -p 8000 -c-1",
+    "serve": "npx http-server -p 8080 -c-1",
+    "build": "echo 'No build needed for vanilla JS - Ready for deployment'",
+    "deploy": "echo 'Upload all files to your web server'"
+  },
+  "keywords": [
+    "pdf",
+    "comparison",
+    "javascript",
+    "vanilla",
+    "forms",
+    "ai",
+    "trazability"
+  ],
+  "author": "TRAZABILITY AI",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
