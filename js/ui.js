@@ -330,7 +330,7 @@ class UIManager {
         document.getElementById('activeUsers').textContent = stats.activeUsers;
         
         // Update activities list
-        const activitiesList = document.getElementById('activitiesList');
+        const activitiesList = document.getElementById('recentActivity');
         activitiesList.innerHTML = '';
         
         if (activities.length === 0) {
